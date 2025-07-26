@@ -67,18 +67,15 @@ func (l *Limiter) MiddlewareWithSlog(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()
 
-		reqID := r.Header.Get("X-Request-Id")
-		logger := slog.With("request_id", reqID)
-
 		clientAddr := getClientAddr(r.Header)
 		if clientAddr == "" {
-			logger.Error("Failed to extract client IP")
+			slog.Error("Failed to extract client IP")
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		key := fmt.Sprintf("httprate:%s", clientAddr)
-		logger = logger.With("key", key)
+		logger := slog.With("key", key)
 
 		current, err := l.config.RedisClient.Get(ctx, key).Int()
 		if err != nil && err != redis.Nil {
